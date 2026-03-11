@@ -1,6 +1,7 @@
 <div align="center">
   <div>&nbsp;</div>
-  <img src="logo.png" width="300"/> 
+  <img src="logo.png" width="300"/> <br>
+  <a href="https://trendshift.io/repositories/8133" target="_blank"><img src="https://trendshift.io/api/badge/repositories/8133" alt="myshell-ai%2FMeloTTS | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </div>
 
 ## Introduction
@@ -30,12 +31,13 @@ Some other features include:
 
 The Python API and model cards can be found in [this repo](https://github.com/myshell-ai/MeloTTS/blob/main/docs/install.md#python-api) or on [HuggingFace](https://huggingface.co/myshell-ai).
 
-## Join the Community
+## Troubleshooting
 
-**Discord**
+### Apple Silicon MPS error: `Output channels > 65536 not supported at the MPS device`
 
-Join our [Discord community](https://discord.gg/myshell) and select the `Developer` role upon joining to gain exclusive access to our developer-only channel! Don't miss out on valuable discussions and collaboration opportunities.
+If you hit this error on Apple Silicon when running on `device='mps'`, update macOS first. In our verification, the same MeloTTS code and Python environment stopped reproducing the issue after updating to macOS `26.3.1`.
 
+If it still reproduces after a macOS update, please open an issue with your macOS version, PyTorch version, and a minimal failing text sample.
 **Contributing**
 
 If you find this work useful, please consider contributing to this repo.
@@ -46,7 +48,7 @@ If you find this work useful, please consider contributing to this repo.
 
 - [Wenliang Zhao](https://wl-zhao.github.io) at Tsinghua University
 - [Xumin Yu](https://yuxumin.github.io) at Tsinghua University
-- [Zengyi Qin](https://www.qinzy.tech) at MIT and MyShell
+- [Zengyi Qin](https://www.qinzy.tech) (project lead) at MIT and MyShell
 
 **Citation**
 ```
