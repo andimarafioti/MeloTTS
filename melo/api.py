@@ -80,9 +80,39 @@ class TTS(nn.Module):
             print(" > ===========================")
         return texts
 
+    @staticmethod
+    def split_mps_clauses(texts):
+        clause_splitter = re.compile(r"([,;:])")
+        pieces = []
+
+        for text in texts:
+            parts = clause_splitter.split(text)
+            if len(parts) == 1:
+                pieces.append(text)
+                continue
+
+            current = ""
+            for part in parts:
+                if not part:
+                    continue
+                if clause_splitter.fullmatch(part):
+                    current = f"{current}{part}".strip()
+                    if current:
+                        pieces.append(current)
+                    current = ""
+                else:
+                    current = f"{current} {part}".strip() if current else part.strip()
+
+            if current:
+                pieces.append(current)
+
+        return [piece for piece in pieces if piece]
+
     def tts_to_file(self, text, speaker_id, output_path=None, sdp_ratio=0.2, noise_scale=0.6, noise_scale_w=0.8, speed=1.0, pbar=None, format=None, position=None, quiet=False,):
         language = self.language
         texts = self.split_sentences_into_pieces(text, language, quiet)
+        if self.device == "mps":
+            texts = self.split_mps_clauses(texts)
         audio_list = []
         if pbar:
             tx = pbar(texts)

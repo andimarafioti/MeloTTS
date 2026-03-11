@@ -14,6 +14,37 @@ from .attentions import Encoder
 LRELU_SLOPE = 0.1
 
 
+def mps_safe_conv1d(conv, x, max_chunk_length=16384):
+    """Run long Conv1d tensors in chunks on MPS to avoid the 65536-channel kernel limit."""
+    if x.device.type != "mps" or x.size(-1) <= max_chunk_length:
+        return conv(x)
+
+    kernel_size = conv.kernel_size[0]
+    dilation = conv.dilation[0]
+    stride = conv.stride[0]
+    padding = conv.padding[0]
+
+    if stride != 1:
+        return conv(x)
+
+    overlap = max(padding, dilation * (kernel_size - 1))
+    outputs = []
+    total_length = x.size(-1)
+
+    for start in range(0, total_length, max_chunk_length):
+        end = min(total_length, start + max_chunk_length)
+        chunk_start = max(0, start - overlap)
+        chunk_end = min(total_length, end + overlap)
+        chunk = x[:, :, chunk_start:chunk_end]
+        chunk_out = conv(chunk)
+
+        left_trim = start - chunk_start
+        right_trim = left_trim + (end - start)
+        outputs.append(chunk_out[:, :, left_trim:right_trim])
+
+    return torch.cat(outputs, dim=-1)
+
+
 class LayerNorm(nn.Module):
     def __init__(self, channels, eps=1e-5):
         super().__init__()
@@ -298,11 +329,11 @@ class ResBlock1(torch.nn.Module):
             xt = F.leaky_relu(x, LRELU_SLOPE)
             if x_mask is not None:
                 xt = xt * x_mask
-            xt = c1(xt)
+            xt = mps_safe_conv1d(c1, xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             if x_mask is not None:
                 xt = xt * x_mask
-            xt = c2(xt)
+            xt = mps_safe_conv1d(c2, xt)
             x = xt + x
         if x_mask is not None:
             x = x * x_mask
@@ -349,7 +380,7 @@ class ResBlock2(torch.nn.Module):
             xt = F.leaky_relu(x, LRELU_SLOPE)
             if x_mask is not None:
                 xt = xt * x_mask
-            xt = c(xt)
+            xt = mps_safe_conv1d(c, xt)
             x = xt + x
         if x_mask is not None:
             x = x * x_mask
