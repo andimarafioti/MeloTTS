@@ -1,25 +1,21 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM
-import sys
+from transformers import AutoTokenizer
+
+from .bert_utils import load_hidden_state_model, resolve_bert_device
 
 model_id = 'bert-base-uncased'
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer = None
 model = None
 
 def get_bert_feature(text, word2ph, device=None):
-    global model
-    if (
-        sys.platform == "darwin"
-        and torch.backends.mps.is_available()
-        and device == "cpu"
-    ):
-        device = "mps"
-    if not device:
-        device = "cuda"
+    global model, tokenizer
+    device = resolve_bert_device(device)
     if model is None:
-        model = AutoModelForMaskedLM.from_pretrained(model_id).to(
-            device
-        )
+        model = load_hidden_state_model(model_id, device)
+    else:
+        model = model.to(device)
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
