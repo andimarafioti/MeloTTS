@@ -31,6 +31,13 @@ Some other features include:
 
 The Python API and model cards can be found in [this repo](https://github.com/myshell-ai/MeloTTS/blob/main/docs/install.md#python-api) or on [HuggingFace](https://huggingface.co/myshell-ai).
 
+## Troubleshooting
+
+### Apple Silicon MPS error: `Output channels > 65536 not supported at the MPS device`
+
+If you hit this error on Apple Silicon when running on `device='mps'`, update macOS first. In our verification, the same MeloTTS code and Python environment stopped reproducing the issue after updating to macOS `26.3.1`.
+
+If it still reproduces after a macOS update, please open an issue with your macOS version, PyTorch version, and a minimal failing text sample.
 **Contributing**
 
 If you find this work useful, please consider contributing to this repo.
