@@ -1,7 +1,7 @@
 import torch
-import sys
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers import AutoTokenizer
 
+from .bert_utils import load_hidden_state_model, resolve_bert_device
 
 # model_id = 'hfl/chinese-roberta-wwm-ext-large'
 local_path = "./bert/chinese-roberta-wwm-ext-large"
@@ -11,22 +11,12 @@ tokenizers = {}
 models = {}
 
 def get_bert_feature(text, word2ph, device=None, model_id='hfl/chinese-roberta-wwm-ext-large'):
+    device = resolve_bert_device(device)
     if model_id not in models:
-        models[model_id] = AutoModelForMaskedLM.from_pretrained(
-            model_id
-        ).to(device)
+        models[model_id] = load_hidden_state_model(model_id, device)
         tokenizers[model_id] = AutoTokenizer.from_pretrained(model_id)
-    model = models[model_id]
+    model = models[model_id].to(device)
     tokenizer = tokenizers[model_id]
-
-    if (
-        sys.platform == "darwin"
-        and torch.backends.mps.is_available()
-        and device == "cpu"
-    ):
-        device = "mps"
-    if not device:
-        device = "cuda"
 
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
