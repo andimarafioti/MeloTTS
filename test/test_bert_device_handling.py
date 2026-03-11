@@ -55,3 +55,28 @@ def test_cached_model_moves_to_requested_device(monkeypatch):
 
     assert features.shape == (4, 3)
     assert fake_model.devices == ["cpu"]
+
+
+def test_hidden_state_loader_uses_automodel_not_masked_lm(monkeypatch):
+    module = importlib.import_module("melo.text.bert_utils")
+    calls = []
+
+    class FakeAutoModel:
+        @staticmethod
+        def from_pretrained(model_id):
+            calls.append(("automodel", model_id))
+            return FakeModel()
+
+    class FakeAutoModelForMaskedLM:
+        @staticmethod
+        def from_pretrained(model_id):
+            raise AssertionError("Masked LM head should not be loaded for hidden-state extraction")
+
+    monkeypatch.setattr(module, "AutoModel", FakeAutoModel)
+    monkeypatch.setattr(module, "AutoModelForMaskedLM", FakeAutoModelForMaskedLM, raising=False)
+
+    model = module.load_hidden_state_model("bert-base-uncased", "cpu")
+
+    assert isinstance(model, FakeModel)
+    assert calls == [("automodel", "bert-base-uncased")]
+    assert model.devices == ["cpu"]
